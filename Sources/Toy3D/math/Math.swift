@@ -25,15 +25,22 @@ public final class Math {
   ) -> Mat4 {
 
     let vLook = normalize(look)
-    let vSide = normalize(cross(vLook, normalize(up)))
-    let vUp = normalize(cross(vSide, vLook))
+    let vSide = cross(vLook, normalize(up))
+    let vUp = cross(vSide, vLook)
 
-    return Mat4([
+    var m = Mat4([
       Vec4(vSide, 0),
       Vec4(vUp, 0),
-      Vec4(vLook, 0),
-      Vec4(-eye, 1)
+      Vec4(-vLook, 0),
+      Vec4(0, 0, 0, 1)
     ])
+    m = m.transpose
+
+    let eyeInv = -(m * Vec4(eye, 0))
+    m[3][0] = eyeInv.x
+    m[3][1] = eyeInv.y
+    m[3][2] = eyeInv.z
+    return m
   }
 
   /// Returns a perspective projection matrix, to convert world space to Metal clip space

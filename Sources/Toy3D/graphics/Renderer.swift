@@ -23,8 +23,11 @@ public final class Renderer: NSObject {
   public let library: MTLLibrary
   public let commandQueue: MTLCommandQueue
   public let scene = Scene()
+  public let fpsCounter = FPSCounter(sampleCount: 100)
+  public var onFrame: (() -> Void)?
 
   private var lastTime: TimeInterval?
+  private let creationTime: TimeInterval
   private let mtkView: MTKView
   private let uniformBuffers: BufferManager
   private var depthStencilState: MTLDepthStencilState!
@@ -65,6 +68,8 @@ public final class Renderer: NSObject {
     depthDescriptor.depthCompareFunction = .less
     depthStencilState = device.makeDepthStencilState(descriptor: depthDescriptor)!
 
+    creationTime = Date.timeIntervalSinceReferenceDate
+
     super.init()
   }
 
@@ -87,6 +92,8 @@ extension Renderer: MTKViewDelegate {
 
   /// Called every frame
   public func draw(in view: MTKView) {
+    onFrame?()
+
     guard let descriptor = view.currentRenderPassDescriptor else {
       return
     }
@@ -107,25 +114,37 @@ extension Renderer: MTKViewDelegate {
       return
     }
 
-    // The uniform buffers store values that are constant across the entire frame
-    let uniformBuffer = uniformBuffers.nextSync()
-    let uniformContents = uniformBuffer.contents().bindMemory(to: Uniforms.self, capacity: 1)
-    uniformContents.pointee.viewProjection = scene.camera.projectionMatrix * scene.camera.viewMatrix
-
-    encoder.setDepthStencilState(depthStencilState)
-    encoder.setVertexBuffer(uniformBuffer, offset: 0, index: 0)
-
     let now = Date.timeIntervalSinceReferenceDate
     if lastTime == nil {
       lastTime = now
     }
 
     let time = Time(
-      totalTime: Date.timeIntervalSinceReferenceDate,
+      totalTime: Date.timeIntervalSinceReferenceDate - creationTime,
       updateTime: now - lastTime!
     )
     lastTime = now
 
+    // The uniform buffers store values that are constant across the entire frame
+    let uniformBuffer = uniformBuffers.nextSync()
+    let uniformContents = uniformBuffer.contents().bindMemory(to: Uniforms.self, capacity: 1)
+    uniformContents.pointee.time = Float(time.totalTime)
+
+    let viewMatrix = scene.camera.viewMatrix
+    uniformContents.pointee.view = viewMatrix
+
+    uniformContents.pointee.inverseView = viewMatrix.inverse
+    uniformContents.pointee.viewProjection = scene.camera.projectionMatrix * viewMatrix
+    uniformContents.pointee.resolution = [
+      Int32(mtkView.frame.size.width * UIScreen.main.scale),
+      Int32(mtkView.frame.size.height * UIScreen.main.scale)
+    ]
+
+    encoder.setDepthStencilState(depthStencilState)
+    encoder.setVertexBuffer(uniformBuffer, offset: 0, index: 0)
+    encoder.setFragmentBuffer(uniformBuffer, offset: 0, index: 0)
+
+    fpsCounter.newFrame(time: time)
     scene.update(time: time)
 
     scene.render(

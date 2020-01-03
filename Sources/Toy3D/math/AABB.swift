@@ -40,4 +40,16 @@ public struct AABB {
       item.y <= max.y &&
       item.z <= max.z
   }
+
+  /// If the ray does not intersect with the box then tFar < tNear
+  static func intersect(rayOrigin: Vec3, rayDir: Vec3, boxMin: Vec3, boxMax: Vec3) -> (tNear: Float, tFar: Float) {
+    let tMin = (boxMin - rayOrigin) / rayDir;
+    let tMax = (boxMax - rayOrigin) / rayDir;
+    let t1 = simd.min(tMin, tMax);
+    let t2 = simd.max(tMin, tMax);
+    let tNear = Swift.max(Swift.max(t1.x, t1.y), t1.z);
+    let tFar = Swift.min(Swift.min(t2.x, t2.y), t2.z);
+
+    return (tNear, tFar)
+  };
 }
