@@ -7,11 +7,34 @@ import Metal
  */
 public struct BasicVertex {
 
+  // Empty vertex, useful when initiaizing arrays with a fixed size
+  public static let Zero = BasicVertex(pos: [0, 0, 0], normal: [0, 0, 0], color: [0, 0, 0, 0], tex: [0, 0])
+
   // position
   public var x, y, z : Float
 
+  /// Helper wrapper around the x, y, z values
+  public var pos: Vec3 {
+     get { return Vec3(x, y, z) }
+     set {
+       x = newValue.x;
+       y = newValue.y;
+       z = newValue.z
+     }
+   }
+
   // normal
   public var nx, ny, nz: Float
+
+  /// Helper wrapper around the nx, ny, nz values
+  public var normal: Vec3 {
+    get { return Vec3(nx, ny, nz) }
+    set {
+      nx = newValue.x
+      ny = newValue.y
+      nz = newValue.z
+    }
+  }
 
   // color
   public var r, g, b, a: Float
