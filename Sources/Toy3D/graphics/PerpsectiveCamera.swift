@@ -57,3 +57,10 @@ public final class PerspectiveCamera {
   }
 
 }
+
+extension PerspectiveCamera: CustomDebugStringConvertible {
+
+  public var debugDescription: String {
+    return "origin: \(origin), fovY: \(fovYDegrees), ar: \(aspectRatio)"
+  }
+}
