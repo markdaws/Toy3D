@@ -11,6 +11,11 @@ import MetalKit
  */
 public final class Mesh {
 
+  public enum FillMode {
+    case fill
+    case wireframe
+  }
+
   public struct VertexBuffer {
     public let buffer: MTLBuffer
     public let bufferIndex: Int
@@ -25,16 +30,31 @@ public final class Mesh {
     }
   }
 
+  public struct IndexBuffer {
+    public let buffer: MTLBuffer
+    public let primitiveType: MTLPrimitiveType
+    public let indexCount: Int
+
+    public init(buffer: MTLBuffer, primitiveType: MTLPrimitiveType, indexCount: Int) {
+      self.buffer = buffer
+      self.primitiveType = primitiveType
+      self.indexCount = indexCount
+    }
+  }
+
   public var vertexBuffer: VertexBuffer? = nil
+  public var indexBuffer: IndexBuffer? = nil
   public var mtkMesh: MTKMesh?
   public var material: Material?
+  public var fillMode: FillMode = .fill
 
   public init(mtkMesh: MTKMesh) {
     self.mtkMesh = mtkMesh
   }
 
-  public init(vertexBuffer: VertexBuffer) {
+  public init(vertexBuffer: VertexBuffer, indexBuffer: IndexBuffer? = nil) {
     self.vertexBuffer = vertexBuffer
+    self.indexBuffer = indexBuffer
   }
 
   func render(encoder: MTLRenderCommandEncoder) {
@@ -59,11 +79,29 @@ public final class Mesh {
     }
 
     encoder.setVertexBuffer(vertexBuffer.buffer, offset: 0, index: vertexBuffer.bufferIndex)
-    encoder.drawPrimitives(
-      type: vertexBuffer.primitiveType,
-      vertexStart: 0,
-      vertexCount: vertexBuffer.vertexCount,
-      instanceCount: 1
-    )
+
+    switch fillMode {
+    case .fill:
+      encoder.setTriangleFillMode(.fill)
+    case .wireframe:
+      encoder.setTriangleFillMode(.lines)
+    }
+
+    if let indexBuffer = indexBuffer {
+      encoder.drawIndexedPrimitives(
+        type: indexBuffer.primitiveType,
+        indexCount: indexBuffer.indexCount,
+        indexType: .uint32,
+        indexBuffer: indexBuffer.buffer,
+        indexBufferOffset: 0
+      )
+    } else {
+      encoder.drawPrimitives(
+        type: vertexBuffer.primitiveType,
+        vertexStart: 0,
+        vertexCount: vertexBuffer.vertexCount,
+        instanceCount: 1
+      )
+    }
   }
 }
