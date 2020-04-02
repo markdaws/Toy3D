@@ -2,6 +2,7 @@
 // https://developer.apple.com/library/archive/documentation/3DDrawing/Conceptual/MTLBestPracticesGuide/FunctionsandLibraries.html#//apple_ref/doc/uid/TP40016642-CH24-SW1
 
 import MetalKit
+import MetalPerformanceShaders
 
 /**
  The render class is our entry point into a 3D scene. It is repsonsible for creating the MTLDevice and
@@ -25,12 +26,15 @@ public final class Renderer: NSObject {
   public let scene = Scene()
   public let fpsCounter = FPSCounter(sampleCount: 100)
   public var onFrame: (() -> Void)?
+  public var onViewportSizeChanged: ((CGSize) -> Void)?
+
+  internal var enabledDepthStencilState: MTLDepthStencilState
+  internal var disabledDepthStencilState: MTLDepthStencilState
 
   private var lastTime: TimeInterval?
   private let creationTime: TimeInterval
   private let mtkView: MTKView
   private let uniformBuffers: BufferManager
-  private var depthStencilState: MTLDepthStencilState!
 
   public init?(mtkView: MTKView) {
 
@@ -63,13 +67,17 @@ public final class Renderer: NSObject {
     })
     uniformBuffers.createBuffers()
 
-    let depthDescriptor = MTLDepthStencilDescriptor()
-    depthDescriptor.isDepthWriteEnabled = true
-    depthDescriptor.depthCompareFunction = .less
-    depthStencilState = device.makeDepthStencilState(descriptor: depthDescriptor)!
+    let enabledDepthDescriptor = MTLDepthStencilDescriptor()
+    enabledDepthDescriptor.isDepthWriteEnabled = true
+    enabledDepthDescriptor.depthCompareFunction = .less
+    enabledDepthStencilState = device.makeDepthStencilState(descriptor: enabledDepthDescriptor)!
+
+    let disabledDepthDescriptor = MTLDepthStencilDescriptor()
+    disabledDepthDescriptor.isDepthWriteEnabled = false
+    disabledDepthDescriptor.depthCompareFunction = .less
+    disabledDepthStencilState = device.makeDepthStencilState(descriptor: disabledDepthDescriptor)!
 
     creationTime = Date.timeIntervalSinceReferenceDate
-
     super.init()
   }
 
@@ -88,6 +96,7 @@ extension Renderer: MTKViewDelegate {
   /// the camera values accordingly
   public func mtkView(_ view: MTKView, drawableSizeWillChange size: CGSize) {
     scene.camera.aspectRatio = Float(size.width / size.height)
+    onViewportSizeChanged?(size)
   }
 
   /// Called every frame
@@ -106,9 +115,9 @@ extension Renderer: MTKViewDelegate {
       return
     }
 
-    // We want to clear the buffer each frame
-    descriptor.colorAttachments[0].loadAction = .clear
-    descriptor.colorAttachments[0].clearColor = scene.clearColor
+    let attachment = descriptor.colorAttachments[0]
+    attachment?.loadAction = .clear
+    attachment?.clearColor = scene.clearColor
 
     guard let encoder = commandBuffer.makeRenderCommandEncoder(descriptor: descriptor) else {
       return
@@ -140,7 +149,7 @@ extension Renderer: MTKViewDelegate {
       Int32(mtkView.frame.size.height * UIScreen.main.scale)
     ]
 
-    encoder.setDepthStencilState(depthStencilState)
+    encoder.setDepthStencilState(enabledDepthStencilState)
     encoder.setVertexBuffer(uniformBuffer, offset: 0, index: 0)
     encoder.setFragmentBuffer(uniformBuffer, offset: 0, index: 0)
 
@@ -164,4 +173,3 @@ extension Renderer: MTKViewDelegate {
     commandBuffer.commit()
   }
 }
-

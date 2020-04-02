@@ -112,14 +112,20 @@ public final class Node {
       )
       encoder.setVertexBytes(&constants, length: MemoryLayout<ModelConstants>.size, index: 1)
 
-      if let texture = material.texture0 {
-        encoder.setFragmentTexture(texture.mtlTexture, index: 0)
-        encoder.setFragmentSamplerState(texture.samplerState, index: 0)
+      if let texture0 = material.texture0 {
+        encoder.setFragmentTexture(texture0.mtlTexture, index: 0)
+        encoder.setFragmentSamplerState(texture0.samplerState, index: 0)
       }
 
       if let texture1 = material.texture1 {
         encoder.setFragmentTexture(texture1.mtlTexture, index: 1)
         encoder.setFragmentSamplerState(texture1.samplerState, index: 1)
+      }
+
+      if material.writesToDepthBuffer {
+        encoder.setDepthStencilState(renderer.enabledDepthStencilState)
+      } else {
+        encoder.setDepthStencilState(renderer.disabledDepthStencilState)
       }
 
       encoder.setCullMode(material.cullMode)

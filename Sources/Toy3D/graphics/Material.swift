@@ -16,6 +16,9 @@ public final class Material {
   /// Specifies if front, back or no primitives should be culled
   public var cullMode: MTLCullMode = .none
 
+  /// If false the material is not written to the depth buffer
+  public var writesToDepthBuffer = true
+
   public init?(
     renderer: Renderer,
     vertexName: String,
