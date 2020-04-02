@@ -17,6 +17,9 @@ public final class Node {
   public var orientation = Quaternion.identity
   public var scale = Vec3(1, 1, 1)
 
+  /// If provided the transform property will return this value vs. combining the pos / scale / orientation values
+  public var overrideTransform: Mat4?
+
   /**
    The mesh associated with the node. Note that this is optional, a mesh can just be a container
    for other child nodes and not have any renderable information associated with it.
@@ -35,10 +38,16 @@ public final class Node {
    These are applied in scale -> rotate -> translate order.
    */
   public var transform: Mat4 {
+    if let overrideTransform = overrideTransform {
+      return overrideTransform
+    }
     let translate = Mat4.translate(position)
     let s = Mat4.scale(scale.x, scale.y, scale.z)
     return translate * orientation.toMat() * s
   }
+
+  /// If true this node and all of its descendents are not rendered
+  public var isHidden = false
 
   private var children = [Node]()
 
@@ -83,6 +92,10 @@ public final class Node {
     parentTransform: Mat4
   ) {
 
+    if isHidden {
+      return
+    }
+
     let worldTransform = parentTransform * transform
 
     // If there is no mesh then this is simply a passthrough node that contains
@@ -93,13 +106,24 @@ public final class Node {
       // shader using a buffer, just like the vertices.
       // Since the data is small we can just use setVertexBytes to let Metal give
       // us a buffer from it's buffer pool.
-      var constants = ModelConstants(modelMatrix: worldTransform)
+      var constants = ModelConstants(
+        modelMatrix: worldTransform,
+        inverseModelMatrix: simd_inverse(worldTransform)
+      )
       encoder.setVertexBytes(&constants, length: MemoryLayout<ModelConstants>.size, index: 1)
 
-      if let texture = material.texture {
+      if let texture = material.texture0 {
         encoder.setFragmentTexture(texture.mtlTexture, index: 0)
         encoder.setFragmentSamplerState(texture.samplerState, index: 0)
       }
+
+      if let texture1 = material.texture1 {
+        encoder.setFragmentTexture(texture1.mtlTexture, index: 1)
+        encoder.setFragmentSamplerState(texture1.samplerState, index: 1)
+      }
+
+      encoder.setCullMode(material.cullMode)
+
       encoder.setRenderPipelineState(material.renderPipelineState)
       mesh.render(encoder: encoder)
     }

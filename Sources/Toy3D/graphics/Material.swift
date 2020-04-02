@@ -6,16 +6,26 @@ import Metal
  */
 public final class Material {
   public let renderPipelineState: MTLRenderPipelineState
-  public var texture: Texture?
+
+  /// An optional texture that can be accessed by the shaders associated with the material
+  public var texture0: Texture?
+
+  /// Support a second optional texture. Some shaders might need more than one texture
+  public var texture1: Texture?
+
+  /// Specifies if front, back or no primitives should be culled
+  public var cullMode: MTLCullMode = .none
 
   public init?(
     renderer: Renderer,
     vertexName: String,
     fragmentName: String,
     vertexDescriptor: MTLVertexDescriptor,
-    texture: Texture?
+    texture: Texture?,
+    texture1: Texture?
   ) {
-    self.texture = texture
+    self.texture0 = texture
+    self.texture1 = texture1
     let descriptor = renderer.defaultPipelineDescriptor()
     let fragmentProgram = renderer.library.makeFunction(name: fragmentName)
     let vertexProgram = renderer.library.makeFunction(name: vertexName)
@@ -23,15 +33,27 @@ public final class Material {
     descriptor.fragmentFunction = fragmentProgram
     descriptor.vertexDescriptor = vertexDescriptor
 
-    guard let state = try? renderer.device.makeRenderPipelineState(descriptor: descriptor) else {
+    do {
+      let state = try renderer.device.makeRenderPipelineState(descriptor: descriptor)
+      renderPipelineState = state
+    } catch {
+      print(error)
       return nil
     }
-    renderPipelineState = state
   }
 }
 
 extension Material {
-  public static func createBasic(renderer: Renderer, texture: Texture?) -> Material? {
+  /**
+   Creates a basic material that supports position, normal, color and texture uv
+   */
+  public static func createBasic(
+    renderer: Renderer,
+    texture: Texture?,
+    texture1: Texture? = nil,
+    vertexName: String? = nil,
+    fragmentName: String? = nil
+  ) -> Material? {
     let descriptor = MTLVertexDescriptor()
 
     // Some vertex buffers are reserved by the render, this gives us the first
@@ -53,6 +75,7 @@ extension Material {
     descriptor.attributes[2].bufferIndex = bufferIndex
     descriptor.attributes[2].offset = MemoryLayout<Float>.stride * 6
 
+    // texture u,v
     descriptor.attributes[3].format = .float2
     descriptor.attributes[3].bufferIndex = bufferIndex
     descriptor.attributes[3].offset = MemoryLayout<Float>.stride * 10
@@ -61,10 +84,12 @@ extension Material {
 
     return Material(
       renderer: renderer,
-      vertexName: "basic_vertex",
-      fragmentName: texture != nil ? "texture_fragment" : "color_fragment",
+      vertexName: vertexName ?? "basic_vertex",
+      fragmentName: fragmentName ?? (texture != nil ? "texture_fragment" : "color_fragment"),
       vertexDescriptor: descriptor,
-      texture: texture
+      texture: texture,
+      texture1: texture1
     )
   }
+
 }
