@@ -22,7 +22,12 @@ public final class Mesh {
     public let primitiveType: MTLPrimitiveType
     public let vertexCount: Int
 
-    public init(buffer: MTLBuffer, bufferIndex: Int, primitiveType: MTLPrimitiveType, vertexCount: Int) {
+    public init(
+      buffer: MTLBuffer,
+      bufferIndex: Int,
+      primitiveType: MTLPrimitiveType,
+      vertexCount: Int
+    ) {
       self.buffer = buffer
       self.bufferIndex = bufferIndex
       self.primitiveType = primitiveType
