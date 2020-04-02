@@ -24,10 +24,10 @@ public final class Material {
     vertexName: String,
     fragmentName: String,
     vertexDescriptor: MTLVertexDescriptor,
-    texture: Texture?,
+    texture0: Texture?,
     texture1: Texture?
   ) {
-    self.texture0 = texture
+    self.texture0 = texture0
     self.texture1 = texture1
     let descriptor = renderer.defaultPipelineDescriptor()
     let fragmentProgram = renderer.library.makeFunction(name: fragmentName)
@@ -52,7 +52,7 @@ extension Material {
    */
   public static func createBasic(
     renderer: Renderer,
-    texture: Texture?,
+    texture0: Texture?,
     texture1: Texture? = nil,
     vertexName: String? = nil,
     fragmentName: String? = nil
@@ -88,9 +88,9 @@ extension Material {
     return Material(
       renderer: renderer,
       vertexName: vertexName ?? "basic_vertex",
-      fragmentName: fragmentName ?? (texture != nil ? "texture_fragment" : "color_fragment"),
+      fragmentName: fragmentName ?? (texture0 != nil ? "texture_fragment" : "color_fragment"),
       vertexDescriptor: descriptor,
-      texture: texture,
+      texture0: texture0,
       texture1: texture1
     )
   }
