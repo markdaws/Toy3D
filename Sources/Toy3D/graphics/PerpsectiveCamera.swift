@@ -8,6 +8,12 @@ public final class PerspectiveCamera {
   public var zNear: Float { didSet { buildProjection = true } }
   public var zFar: Float { didSet { buildProjection = true } }
 
+  /// If set will override the default projection matrix that is calculated from the explicit camera parameters
+  public var overrideProjectionMatrix: Mat4?
+
+  /// If set will override the default view matrix that is calculated from the explicit camera parameters
+  public var overrideViewMatrix: Mat4?
+
   private var buildProjection = true
   private var buildView = true
   private var _projectionMatrix = Mat4.identity
@@ -15,6 +21,10 @@ public final class PerspectiveCamera {
 
   public var projectionMatrix: Mat4 {
     get {
+      if let overrideProjectionMatrix = overrideProjectionMatrix {
+        return overrideProjectionMatrix
+      }
+
       if buildProjection {
         buildProjection = false
         _projectionMatrix = Math.makePerspective(
@@ -30,6 +40,10 @@ public final class PerspectiveCamera {
 
   public var viewMatrix: Mat4 {
     get {
+      if let overrideViewMatrix = overrideViewMatrix {
+        return overrideViewMatrix
+      }
+
       if buildView {
         buildView = false
         _viewMatrix = Math.makeLook(eye: origin, look: look, up: up)
