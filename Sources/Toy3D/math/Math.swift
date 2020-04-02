@@ -1,4 +1,5 @@
 import simd
+import GLKit
 
 /// Simple math utilities
 public final class Math {
@@ -24,23 +25,19 @@ public final class Math {
     up: Vec3
   ) -> Mat4 {
 
-    let vLook = normalize(look)
-    let vSide = cross(vLook, normalize(up))
-    let vUp = cross(vSide, vLook)
-
-    var m = Mat4([
-      Vec4(vSide, 0),
-      Vec4(vUp, 0),
-      Vec4(-vLook, 0),
-      Vec4(0, 0, 0, 1)
-    ])
-    m = m.transpose
-
-    let eyeInv = -(m * Vec4(eye, 0))
-    m[3][0] = eyeInv.x
-    m[3][1] = eyeInv.y
-    m[3][2] = eyeInv.z
-    return m
+    let target = eye + look
+    let glLook = GLKMatrix4MakeLookAt(
+      eye.x,
+      eye.y,
+      eye.z,
+      target.x,
+      target.y,
+      target.z,
+      up.x,
+      up.y,
+      up.z
+    )
+    return GLKMatrix4.toFloat4x4(matrix: glLook)
   }
 
   /// Returns a perspective projection matrix, to convert world space to Metal clip space
@@ -50,14 +47,23 @@ public final class Math {
     nearZ: Float,
     farZ: Float
   ) -> Mat4 {
-    let ys = 1 / tanf(Math.toRadians(fovy) * 0.5)
-    let xs = ys / aspectRatio
-    let zs = farZ / (nearZ - farZ)
-    return Mat4([
-      Vec4(xs,  0, 0,   0),
-      Vec4( 0, ys, 0,   0),
-      Vec4( 0,  0, zs, -1),
-      Vec4( 0,  0, zs * nearZ, 0)
-    ])
+
+    let persp = GLKMatrix4MakePerspective(
+      Math.toRadians(fovy),
+      aspectRatio,
+      nearZ,
+      farZ
+    )
+    return GLKMatrix4.toFloat4x4(matrix: persp)
+  }
+}
+
+extension GLKMatrix4 {
+  static func toFloat4x4(matrix: GLKMatrix4) -> float4x4 {
+    return float4x4(
+      Vec4(matrix.m00, matrix.m01, matrix.m02, matrix.m03),
+      Vec4(matrix.m10, matrix.m11, matrix.m12, matrix.m13),
+      Vec4(matrix.m20, matrix.m21, matrix.m22, matrix.m23),
+      Vec4(matrix.m30, matrix.m31, matrix.m32, matrix.m33))
   }
 }
