@@ -14,12 +14,12 @@ public final class Primitives {
     width: Float,
     height: Float,
     length: Float,
-    topColor: CGColor,
-    rightColor: CGColor,
-    bottomColor: CGColor,
-    leftColor: CGColor,
-    frontColor: CGColor,
-    backColor: CGColor
+    topColor: CGColor = UIColor.white.cgColor,
+    rightColor: CGColor = UIColor.white.cgColor,
+    bottomColor: CGColor = UIColor.white.cgColor,
+    leftColor: CGColor = UIColor.white.cgColor,
+    frontColor: CGColor = UIColor.white.cgColor,
+    backColor: CGColor = UIColor.white.cgColor
   ) -> Mesh? {
     let hw = width / 2.0
     let hh = height / 2.0

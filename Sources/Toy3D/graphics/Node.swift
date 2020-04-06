@@ -55,9 +55,14 @@ public final class Node {
     self.mesh = mesh
   }
 
-  /// Adds a new child to the node
+  /// Adds a new child to the nodes children collection at the end
   public func addChild(_ child: Node) {
     children.append(child)
+  }
+
+  /// Adds a new child in the nodes children collection at the specified index
+  public func insertChild(_ child: Node, index: Int) {
+    children.insert(child, at: index)
   }
 
   /// Removes a child from the node

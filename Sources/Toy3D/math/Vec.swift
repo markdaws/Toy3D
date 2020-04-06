@@ -42,6 +42,10 @@ extension Vec4 {
       return Vec4.zero
     }
 
+    if c.count == 2 {
+      return [Float(c[0]), Float(c[0]), Float(c[0]), Float(c[1])]
+    }
+
     return [Float(c[0]), Float(c[1]), Float(c[2]), Float(c[3])]
   }
 

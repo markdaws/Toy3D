@@ -5,8 +5,8 @@ import MetalKit
  */
 public final class Texture {
 
-  public let mtlTexture: MTLTexture
-  public let samplerState: MTLSamplerState?
+  public var mtlTexture: MTLTexture
+  public var samplerState: MTLSamplerState?
 
   public init(mtlTexture: MTLTexture, samplerState: MTLSamplerState?) {
     self.mtlTexture = mtlTexture

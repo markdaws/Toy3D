@@ -19,6 +19,9 @@ public final class Material {
   /// If false the material is not written to the depth buffer
   public var writesToDepthBuffer = true
 
+  /// The vertex descriptor used to create the material
+  public let vertexDescriptor: MTLVertexDescriptor
+
   public init?(
     renderer: Renderer,
     vertexName: String,
@@ -29,6 +32,7 @@ public final class Material {
   ) {
     self.texture0 = texture0
     self.texture1 = texture1
+    self.vertexDescriptor = vertexDescriptor
     let descriptor = renderer.defaultPipelineDescriptor()
     let fragmentProgram = renderer.library.makeFunction(name: fragmentName)
     let vertexProgram = renderer.library.makeFunction(name: vertexName)
